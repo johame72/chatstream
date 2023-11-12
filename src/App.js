@@ -89,7 +89,7 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Real-time Streaming with OpenAI and SSE</h1>
+      <h1>Bu's Corner - Real-time Streaming w/ SSE</h1>
       <input 
         type="text" 
         value={inputText} 
