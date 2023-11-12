@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -9,6 +10,9 @@ app.use(express.json());
 
 const port = process.env.PORT || 3001;
 const openaiKey = process.env.OPENAI_API_KEY;
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../build')));
 
 let eventStreamResponse;
 
@@ -45,7 +49,7 @@ app.post('/send', async (req, res) => {
         'Content-Type': 'application/json'
       },
       responseType: 'stream',
-      timeout: 0 // Set timeout to 0 to prevent axios from timing out
+      timeout: 0
     });
 
     responseStream.data.on('data', (chunk) => {
@@ -78,16 +82,15 @@ app.get('/stream', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
-
   eventStreamResponse = res;
-
   req.on('close', () => {
     eventStreamResponse = null;
   });
 });
 
-app.get('/', (req, res) => {
-  res.send('Server is running');
+// The "catchall" handler: for any request that doesn't match one above, send back the index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
 });
 
 app.use((err, req, res, next) => {

@@ -10,7 +10,6 @@ rstream
 |   +--- node_modules
 |   +--- .env
 |   +--- index.js
-|   +--- old_index.js
 |   +--- package-lock.json
 |   +--- package.json
 +--- src
@@ -23,7 +22,6 @@ rstream
 |   +--- logo.svg
 |   +--- setupTests.js
 +--- .gitignore
-+--- old_package.json
 +--- package-lock.json
 +--- package.json
 +--- Procfile
