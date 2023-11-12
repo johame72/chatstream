@@ -1,3 +1,4 @@
+// server\index.js
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
@@ -65,7 +66,7 @@ app.post('/send', async (req, res) => {
       if (eventStreamResponse && !eventStreamResponse.finished) {
         eventStreamResponse.write('data: [ERROR]\n\n');
       }
-    });
+    });    
 
     res.status(200).json({ message: 'Stream started' });
   } catch (error) {
