@@ -10,17 +10,20 @@ rstream
 |   +--- node_modules
 |   +--- .env
 |   +--- index.js
+|   +--- old_index.js
 |   +--- package-lock.json
 |   +--- package.json
 +--- src
-    \--- App.css
-    \--- App.js
-    \--- App.test.js
-    \--- FormattedText.js
-    \--- index.css
-    \--- index.js
-    \--- logo.svg
-    \--- setupTests.js
+|   +--- App.css
+|   +--- App.js
+|   +--- App.test.js
+|   +--- FormattedText.js
+|   +--- index.css
+|   +--- index.js
+|   +--- logo.svg
+|   +--- setupTests.js
 +--- .gitignore
++--- old_package.json
 +--- package-lock.json
 +--- package.json
++--- Procfile
