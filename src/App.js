@@ -5,6 +5,7 @@ import FormattedText from './FormattedText';
 function App() {
   const [inputText, setInputText] = useState('');
   const [streamedContent, setStreamedContent] = useState('');
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 function parseStreamedData(dataString) {
   try {
@@ -43,7 +44,7 @@ function parseStreamedData(dataString) {
 }
 
   useEffect(() => {
-    const eventSource = new EventSource('http://localhost:3001/stream');
+    const eventSource = new EventSource('${apiUrl}/stream');
 
     eventSource.onmessage = function(event) {
       console.log("Raw data:", event.data); // Add this line
@@ -65,7 +66,7 @@ function parseStreamedData(dataString) {
     return () => {
       eventSource.close();
     };
-  }, []);
+  }, [apiUrl]);
 
   const handleInputChange = (e) => {
     setInputText(e.target.value);
@@ -73,7 +74,7 @@ function parseStreamedData(dataString) {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch('http://localhost:3001/send', {
+      const response = await fetch('${apiUrl}/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
