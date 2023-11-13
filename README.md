@@ -90,7 +90,7 @@ chatstream
 |   +--- index.html  
 |   +--- manifest.json  
 |   +--- robots.txt  
-+--- server 
++--- server  
 |   +--- node_modules  
 |   +--- .env  
 |   +--- index.js  
