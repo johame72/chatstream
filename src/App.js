@@ -7,48 +7,37 @@ function App() {
   const [streamedContent, setStreamedContent] = useState('');
   const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
-function parseStreamedData(dataString) {
-  try {
-    // Accumulator for JSON data
-    let jsonDataAccumulator = '';
-    const lines = dataString.split('\n');
-    const parsedData = [];
+  function parseStreamedData(dataString) {
+    try {
+      let jsonDataAccumulator = '';
+      const lines = dataString.split('\n');
+      const parsedData = [];
 
-    lines.forEach(line => {
-      // Remove 'data: ' prefix and trim
-      line = line.replace(/^data: /, '').trim();
+      lines.forEach(line => {
+        line = line.replace(/^data: /, '').trim();
+        if (line === '[DONE]') return;
 
-      // Check if line indicates end of data stream
-      if (line === '[DONE]') {
-        return;
-      }
+        jsonDataAccumulator += line;
+        try {
+          const parsedJson = JSON.parse(jsonDataAccumulator);
+          jsonDataAccumulator = '';
+          parsedData.push(parsedJson);
+        } catch {
+          // JSON is incomplete, waiting for more data
+        }
+      });
 
-      // Accumulate JSON data
-      jsonDataAccumulator += line;
-
-      // Try to parse the accumulated data
-      try {
-        const parsedJson = JSON.parse(jsonDataAccumulator);
-        // If parse is successful, reset the accumulator and add parsed JSON to parsedData
-        jsonDataAccumulator = '';
-        parsedData.push(parsedJson);
-      } catch {
-        // If JSON is incomplete, wait for more data (do not reset jsonDataAccumulator)
-      }
-    });
-
-    return parsedData;
-  } catch (error) {
-    console.error('Error parsing chunk:', error);
-    return [];
+      return parsedData;
+    } catch (error) {
+      console.error('Error parsing chunk:', error);
+      return [];
+    }
   }
-}
 
   useEffect(() => {
     const eventSource = new EventSource(`${apiUrl}/stream`);
 
     eventSource.onmessage = function(event) {
-      console.log("Raw data:", event.data); // Add this line
       const parsedChunks = parseStreamedData(event.data);
       parsedChunks.forEach(chunk => {
         if (chunk.choices && chunk.choices.length > 0) {
@@ -64,9 +53,7 @@ function parseStreamedData(dataString) {
       console.error('EventSource failed:', event);
     };
 
-    return () => {
-      eventSource.close();
-    };
+    return () => eventSource.close();
   }, [apiUrl]);
 
   const handleInputChange = (e) => {
@@ -77,9 +64,7 @@ function parseStreamedData(dataString) {
     try {
       const response = await fetch(`${apiUrl}/send`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: inputText }),
       });
 
@@ -87,24 +72,18 @@ function parseStreamedData(dataString) {
         throw new Error('Network response was not ok');
       }
 
-      setStreamedContent(''); // Reset the streamed content
-      setInputText(''); // Clear the input
+      setStreamedContent('');
+      setInputText('');
     } catch (error) {
-      console.error('There has been a problem with your fetch operation:', error);
+      console.error('Fetch operation error:', error);
     }
   };
 
   return (
     <div className="App">
       <h1>Real-time Streaming with OpenAI and SSE</h1>
-      <input 
-        type="text" 
-        value={inputText} 
-        onChange={handleInputChange}
-      />
-      <button onClick={handleSubmit}>
-        Send
-      </button>
+      <input type="text" value={inputText} onChange={handleInputChange} />
+      <button onClick={handleSubmit}>Send</button>
       <div>
         <h2>Streamed Responses:</h2>
         <FormattedText text={streamedContent} />
