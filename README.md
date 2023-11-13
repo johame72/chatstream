@@ -15,7 +15,7 @@ To get this project up and running on your local machine for development and tes
 1. **Clone the Repository**
    
    ```bash
-   git clone https://github.com/[your-username]/realtime-streaming-openai.git
+   git clone https://github.com/johame72/realtime-streaming-openai.git
    cd realtime-streaming-openai
    ```
 
@@ -58,7 +58,7 @@ To get this project up and running on your local machine for development and tes
 - **Frontend:** React.js
 - **Backend:** Node.js, Express.js
 - **APIs:** OpenAI GPT-4
-- **Deployment:** Heroku (backend), Vercel (frontend)
+- **Deployment:** Heroku (frontend/backend)
 
 ## Contributing 🤝
 
@@ -66,7 +66,7 @@ Contributions, issues, and feature requests are welcome! Feel free to check [iss
 
 ## Authors 👨‍💻
 
-- **Your Name** - _Initial work_ - [YourUsername](https://github.com/YourUsername)
+- **John Merkel** - _Initial work_ - [johame72](https://github.com/johame72)
 
 See also the list of [contributors](https://github.com/your-repo/realtime-streaming-openai/contributors) who participated in this project.
 
