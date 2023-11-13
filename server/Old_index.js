@@ -12,6 +12,7 @@ app.use(express.json());
 const port = process.env.PORT || 3001;
 const openaiKey = process.env.OPENAI_API_KEY;
 
+// Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../build')));
 
 let eventStreamResponse;
@@ -20,7 +21,7 @@ app.post('/send', async (req, res) => {
   try {
     const userMessage = req.body.message;
     const systemMessage = 'You are a helpful assistant.';
-    const uid = 'user-id-placeholder'; 
+    const uid = 'user-id-placeholder'; // Replace with actual user ID if available
 
     const payload = {
       temperature: 0.85,
@@ -32,8 +33,14 @@ app.post('/send', async (req, res) => {
       model: 'gpt-4',
       stream: true,
       messages: [
-        { role: 'system', content: systemMessage },
-        { role: 'user', content: userMessage }
+        {
+          role: 'system',
+          content: systemMessage
+        },
+        {
+          role: 'user',
+          content: userMessage
+        }
       ]
     };
 
@@ -82,6 +89,7 @@ app.get('/stream', (req, res) => {
   });
 });
 
+// The "catchall" handler: for any request that doesn't match one above, send back the index.html file.
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../build', 'index.html'));
 });

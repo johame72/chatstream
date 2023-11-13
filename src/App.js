@@ -1,36 +1,63 @@
+// src\App.js
 import React, { useState, useEffect } from 'react';
 import FormattedText from './FormattedText';
 
-const useChat = (apiUrl) => {
+function App() {
   const [inputText, setInputText] = useState('');
   const [streamedContent, setStreamedContent] = useState('');
-  let incompleteData = ''; // To hold incomplete data chunks
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+  let incompleteData = ''; // Buffer for incomplete JSON data
 
-  const handleStreamedData = (dataString) => {
-    // Append any previously incomplete data
-    const completeData = incompleteData + dataString;
-    incompleteData = ''; // Reset incomplete data
+  function parseStreamedData(dataString) {
+    try {
+      incompleteData += dataString;
+      const lines = incompleteData.split('\n');
+      const parsedData = [];
+      lines.forEach((line, index) => {
+        line = line.replace(/^data: /, '').trim();
+        if (line === '[DONE]') {
+          incompleteData = '';
+          return;
+        }
+        try {
+          const parsedJson = JSON.parse(line);
+          parsedData.push(parsedJson);
+          incompleteData = lines.slice(index + 1).join('\n'); // Update buffer
+        } catch {
+          // Leave the incompleteData buffer as is
+        }
+      });
+      return parsedData;
+    } catch (error) {
+      console.error('Error parsing chunk:', error);
+      return [];
+    }
+  }
 
-    const lines = completeData.split('\n');
-    lines.forEach((line, index) => {
-      line = line.replace(/^data: /, "").trim();
-      if (["", "[DONE]"].includes(line)) return;
-
-      try {
-        const parsedLine = JSON.parse(line);
-        if (parsedLine.choices && parsedLine.choices.length > 0) {
-          const content = parsedLine.choices[0].delta.content;
+  useEffect(() => {
+    const eventSource = new EventSource(`${apiUrl}/stream`);
+    eventSource.onmessage = function(event) {
+      const parsedChunks = parseStreamedData(event.data);
+      parsedChunks.forEach(chunk => {
+        if (chunk.choices && chunk.choices.length > 0) {
+          const content = chunk.choices[0].delta.content;
           if (content) {
             setStreamedContent(currentContent => currentContent + content);
           }
         }
-      } catch (e) {
-        // If parsing fails, assume data is incomplete
-        // Save it to append to the next chunk
-        incompleteData = lines.slice(index).join('\n');
-      }
-    });
-  }
+      });
+    };
+    eventSource.onerror = function(event) {
+      console.error('EventSource failed:', event);
+    };
+    return () => {
+      eventSource.close();
+    };
+  }, [apiUrl]);
+
+  const handleInputChange = (e) => {
+    setInputText(e.target.value);
+  };
 
   const handleSubmit = async () => {
     try {
@@ -41,39 +68,15 @@ const useChat = (apiUrl) => {
         },
         body: JSON.stringify({ message: inputText }),
       });
-
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
-
-      setInputText(''); // Clear the input
       setStreamedContent(''); // Reset the streamed content
+      setInputText(''); // Clear the input
     } catch (error) {
-      console.error('Problem with fetch operation:', error);
+      console.error('There has been a problem with your fetch operation:', error);
     }
   };
-
-  useEffect(() => {
-    const eventSource = new EventSource(`${apiUrl}/stream`);
-    eventSource.onmessage = (event) => {
-      handleStreamedData(event.data);
-    };
-
-    eventSource.onerror = (event) => {
-      console.error('EventSource failed:', event);
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [apiUrl]);
-
-  return { inputText, setInputText, streamedContent, handleSubmit };
-};
-
-function App() {
-  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-  const { inputText, setInputText, streamedContent, handleSubmit } = useChat(apiUrl);
 
   return (
     <div className="App">
@@ -81,7 +84,7 @@ function App() {
       <input 
         type="text" 
         value={inputText} 
-        onChange={(e) => setInputText(e.target.value)}
+        onChange={handleInputChange}
       />
       <button onClick={handleSubmit}>
         Send
