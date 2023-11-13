@@ -82,11 +82,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Filetree Directory
 
-chatstream
+chatstream  
 +--- build  
 +--- node_modules  
 +--- public  
-|   +--- favicon.ico 
+|   +--- favicon.ico  
 |   +--- index.html  
 |   +--- manifest.json  
 |   +--- robots.txt  
