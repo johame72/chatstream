@@ -5,73 +5,49 @@ function App() {
   const [inputText, setInputText] = useState('');
   const [streamedContent, setStreamedContent] = useState('');
   const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-function parseStreamedData(dataString) {
-  try {
-    // Accumulator for JSON data
-    let jsonDataAccumulator = '';
-    const lines = dataString.split('\n');
-    const parsedData = [];
-    lines.forEach(line => {
-      // Remove 'data: ' prefix and trim
-      line = line.replace(/^data: /, '').trim();
-      // Check if line indicates end of data stream
-      if (line === '[DONE]') {
-        return;
-      }
-      // Accumulate JSON data
-      jsonDataAccumulator += line;
-      // Try to parse the accumulated data
-      try {
-        const parsedJson = JSON.parse(jsonDataAccumulator);
-        // If parse is successful, reset the accumulator and add parsed JSON to parsedData
-        jsonDataAccumulator = '';
-        parsedData.push(parsedJson);
-      } catch {
-        // If JSON is incomplete, wait for more data (do not reset jsonDataAccumulator)
-      }
-    });
-    return parsedData;
-  } catch (error) {
-    console.error('Error parsing chunk:', error);
-    return [];
-  }
-}
-  useEffect(() => {
-    const eventSource = new EventSource(`${apiUrl}/stream`);
-    eventSource.onmessage = function(event) {
-      console.log("Raw data:", event.data); // Add this line
-      const parsedChunks = parseStreamedData(event.data);
-      parsedChunks.forEach(chunk => {
-        if (chunk.choices && chunk.choices.length > 0) {
-          const content = chunk.choices[0].delta.content;
+  async function fetchStreamedData() {
+    try {
+      const response = await fetch(`${apiUrl}/stream`);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        console.log("Raw data:", chunk); // Log raw data
+        const lines = chunk.split("\n");
+        const parsedLines = lines
+          .map(line => line.replace(/^data: /, "").trim())
+          .filter(line => line !== "" && line !== "[DONE]")
+          .map(line => JSON.parse(line));
+        for (const parsedLine of parsedLines) {
+          const { choices } = parsedLine;
+          const { delta } = choices[0];
+          const { content } = delta;
           if (content) {
             setStreamedContent(currentContent => currentContent + content);
           }
         }
-      });
-    };
-    eventSource.onerror = function(event) {
-      console.error('EventSource failed:', event);
-    };
-    return () => {
-      eventSource.close();
-    };
+      }
+    } catch (error) {
+      console.error('Error in stream:', error);
+    }
+  }
+  useEffect(() => {
+    fetchStreamedData();
   }, [apiUrl]);
   const handleInputChange = (e) => {
     setInputText(e.target.value);
   };
   const handleSubmit = async () => {
     try {
-      const response = await fetch(`${apiUrl}/send`, {
+      await fetch(`${apiUrl}/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ message: inputText }),
       });
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
       setStreamedContent(''); // Reset the streamed content
       setInputText(''); // Clear the input
     } catch (error) {
