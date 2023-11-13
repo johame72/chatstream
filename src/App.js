@@ -1,13 +1,12 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import FormattedText from './FormattedText';
 
 const useChat = (apiUrl) => {
   const [inputText, setInputText] = useState('');
   const [streamedContent, setStreamedContent] = useState('');
-  const decoder = new TextDecoder("utf-8");
 
-  const parseStreamedData = (decodedChunk) => {
-    const lines = decodedChunk.split('\n');
+  const parseStreamedData = (dataString) => {
+    const lines = dataString.split('\n');
     const trimmedData = lines.map(line => line.replace(/^data: /, "").trim());
     const filteredData = trimmedData.filter(line => !["", "[DONE]"].includes(line));
     const parsedData = filteredData.map(line => JSON.parse(line));
@@ -15,8 +14,8 @@ const useChat = (apiUrl) => {
     return parsedData;
   }
 
-  const handleStreamedData = (chunk) => {
-    const parsedChunks = parseStreamedData(chunk);
+  const handleStreamedData = (dataString) => {
+    const parsedChunks = parseStreamedData(dataString);
     parsedChunks.forEach(data => {
       if (data.choices && data.choices.length > 0) {
         const content = data.choices[0].delta.content;
@@ -51,8 +50,7 @@ const useChat = (apiUrl) => {
   useEffect(() => {
     const eventSource = new EventSource(`${apiUrl}/stream`);
     eventSource.onmessage = (event) => {
-      const decodedChunk = decoder.decode(event.data);
-      handleStreamedData(decodedChunk);
+      handleStreamedData(event.data);
     };
 
     eventSource.onerror = (event) => {
