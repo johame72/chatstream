@@ -40,7 +40,7 @@ function App() {
   useEffect(() => {
     const eventSource = new EventSource(`${apiUrl}/stream`);
     eventSource.onmessage = function(event) {
-      console.log("Raw data:", event.data);
+      console.log("Raw data:", event.data); // Log raw data
       const parsedChunks = parseStreamedData(event.data);
       parsedChunks.forEach(chunk => {
         if (chunk.choices && chunk.choices.length > 0) {
