@@ -9,38 +9,30 @@ function App() {
 
   function parseStreamedData(dataString) {
     try {
-      // Initialize an accumulator for JSON data
-      let jsonDataAccumulator = '';
       const lines = dataString.split('\n');
-      const parsedData = [];
-
-      lines.forEach(line => {
-        // Remove 'data: ' prefix and trim
-        line = line.replace(/^data: /, '').trim();
-
-        if (line === '[DONE]') {
-          // End of data stream
-          return;
-        }
-
+      const trimmedData = lines.map(line => line.replace(/^data: /, "").trim());
+      const filteredData = trimmedData.filter(line => !["", "[DONE]"].includes(line));
+      
+      // Handle cases where JSON objects span multiple lines
+      let jsonDataAccumulator = '';
+      const parsedData = filteredData.map(line => {
         jsonDataAccumulator += line;
-
         try {
           const parsedJson = JSON.parse(jsonDataAccumulator);
-          // If parse is successful, reset the accumulator and store the parsed data
-          jsonDataAccumulator = '';
-          parsedData.push(parsedJson);
+          jsonDataAccumulator = ''; // Reset the accumulator on successful parse
+          return parsedJson;
         } catch {
           // If JSON is incomplete, wait for more data
+          return null;
         }
-      });
-
+      }).filter(item => item !== null); // Filter out null values (incomplete JSON objects)
+      
       return parsedData;
     } catch (error) {
       console.error('Error parsing chunk:', error);
       return [];
     }
-  }
+  }  
 
   useEffect(() => {
     const eventSource = new EventSource(`${apiUrl}/stream`);
