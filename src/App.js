@@ -1,47 +1,45 @@
 // src\App.js
 import React, { useState, useEffect } from 'react';
 import FormattedText from './FormattedText';
-
 function App() {
   const [inputText, setInputText] = useState('');
   const [streamedContent, setStreamedContent] = useState('');
   const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-
-  function parseStreamedData(dataString) {
-    try {
-      // Handle missing 'data:' prefix in the first chunk
-      if (!dataString.startsWith('data:')) {
-        dataString = 'data: ' + dataString;
+function parseStreamedData(dataString) {
+  try {
+    // Accumulator for JSON data
+    let jsonDataAccumulator = '';
+    const lines = dataString.split('\n');
+    const parsedData = [];
+    lines.forEach(line => {
+      // Remove 'data: ' prefix and trim
+      line = line.replace(/^data: /, '').trim();
+      // Check if line indicates end of data stream
+      if (line === '[DONE]') {
+        return;
       }
-
-      let jsonDataAccumulator = '';
-      const lines = dataString.split('\n');
-      const parsedData = [];
-      lines.forEach(line => {
-        line = line.replace(/^data: /, '').trim();
-        if (line === '[DONE]') {
-          return;
-        }
-        jsonDataAccumulator += line;
-        try {
-          const parsedJson = JSON.parse(jsonDataAccumulator);
-          jsonDataAccumulator = '';
-          parsedData.push(parsedJson);
-        } catch {
-          // If JSON is incomplete, wait for more data
-        }
-      });
-      return parsedData;
-    } catch (error) {
-      console.error('Error parsing chunk:', error);
-      return [];
-    }
+      // Accumulate JSON data
+      jsonDataAccumulator += line;
+      // Try to parse the accumulated data
+      try {
+        const parsedJson = JSON.parse(jsonDataAccumulator);
+        // If parse is successful, reset the accumulator and add parsed JSON to parsedData
+        jsonDataAccumulator = '';
+        parsedData.push(parsedJson);
+      } catch {
+        // If JSON is incomplete, wait for more data (do not reset jsonDataAccumulator)
+      }
+    });
+    return parsedData;
+  } catch (error) {
+    console.error('Error parsing chunk:', error);
+    return [];
   }
-
+}
   useEffect(() => {
     const eventSource = new EventSource(`${apiUrl}/stream`);
     eventSource.onmessage = function(event) {
-      console.log("Raw data:", event.data); // Log raw data
+      console.log("Raw data:", event.data); // Add this line
       const parsedChunks = parseStreamedData(event.data);
       parsedChunks.forEach(chunk => {
         if (chunk.choices && chunk.choices.length > 0) {
@@ -59,11 +57,9 @@ function App() {
       eventSource.close();
     };
   }, [apiUrl]);
-
   const handleInputChange = (e) => {
     setInputText(e.target.value);
   };
-
   const handleSubmit = async () => {
     try {
       const response = await fetch(`${apiUrl}/send`, {
@@ -82,7 +78,6 @@ function App() {
       console.error('There has been a problem with your fetch operation:', error);
     }
   };
-
   return (
     <div className="App">
       <h1>Real-time Streaming with OpenAI and SSE</h1>
@@ -101,5 +96,4 @@ function App() {
     </div>
   );
 }
-
 export default App;
