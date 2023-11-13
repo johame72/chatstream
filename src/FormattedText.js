@@ -1,3 +1,4 @@
+// src\FormattedText.js
 import React from 'react';
 import { marked } from 'marked';
 
