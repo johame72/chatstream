@@ -5,15 +5,6 @@ const useChat = (apiUrl) => {
   const [inputText, setInputText] = useState('');
   const [streamedContent, setStreamedContent] = useState('');
 
-  const parseStreamedData = (dataString) => {
-    const lines = dataString.split('\n');
-    const trimmedData = lines.map(line => line.replace(/^data: /, "").trim());
-    const filteredData = trimmedData.filter(line => !["", "[DONE]"].includes(line));
-    const parsedData = filteredData.map(line => JSON.parse(line));
-    
-    return parsedData;
-  }
-
   const handleStreamedData = (dataString) => {
     const parsedChunks = parseStreamedData(dataString);
     parsedChunks.forEach(data => {
