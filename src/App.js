@@ -1,68 +1,31 @@
-// src\App.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import FormattedText from './FormattedText';
 
-function App() {
+const useChat = (apiUrl) => {
   const [inputText, setInputText] = useState('');
   const [streamedContent, setStreamedContent] = useState('');
-  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+  const decoder = new TextDecoder("utf-8");
 
-  function parseStreamedData(dataString) {
-    try {
-      const lines = dataString.split('\n');
-      const trimmedData = lines.map(line => line.replace(/^data: /, "").trim());
-      const filteredData = trimmedData.filter(line => !["", "[DONE]"].includes(line));
-      
-      // Handle cases where JSON objects span multiple lines
-      let jsonDataAccumulator = '';
-      const parsedData = filteredData.map(line => {
-        jsonDataAccumulator += line;
-        try {
-          const parsedJson = JSON.parse(jsonDataAccumulator);
-          jsonDataAccumulator = ''; // Reset the accumulator on successful parse
-          return parsedJson;
-        } catch {
-          // If JSON is incomplete, wait for more data
-          return null;
+  const parseStreamedData = (decodedChunk) => {
+    const lines = decodedChunk.split('\n');
+    const trimmedData = lines.map(line => line.replace(/^data: /, "").trim());
+    const filteredData = trimmedData.filter(line => !["", "[DONE]"].includes(line));
+    const parsedData = filteredData.map(line => JSON.parse(line));
+    
+    return parsedData;
+  }
+
+  const handleStreamedData = (chunk) => {
+    const parsedChunks = parseStreamedData(chunk);
+    parsedChunks.forEach(data => {
+      if (data.choices && data.choices.length > 0) {
+        const content = data.choices[0].delta.content;
+        if (content) {
+          setStreamedContent(currentContent => currentContent + content);
         }
-      }).filter(item => item !== null); // Filter out null values (incomplete JSON objects)
-      
-      return parsedData;
-    } catch (error) {
-      console.error('Error parsing chunk:', error);
-      return [];
-    }
-  }  
-
-  useEffect(() => {
-    const eventSource = new EventSource(`${apiUrl}/stream`);
-
-    eventSource.onmessage = function(event) {
-      console.log("Raw data:", event.data);
-      const parsedChunks = parseStreamedData(event.data);
-
-      parsedChunks.forEach(chunk => {
-        if (chunk.choices && chunk.choices.length > 0) {
-          const content = chunk.choices[0].delta.content;
-          if (content) {
-            setStreamedContent(currentContent => currentContent + content);
-          }
-        }
-      });
-    };
-
-    eventSource.onerror = function(event) {
-      console.error('EventSource failed:', event);
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [apiUrl]);
-
-  const handleInputChange = (e) => {
-    setInputText(e.target.value);
-  };
+      }
+    });
+  }
 
   const handleSubmit = async () => {
     try {
@@ -78,12 +41,35 @@ function App() {
         throw new Error('Network response was not ok');
       }
 
-      setStreamedContent(''); // Reset the streamed content
       setInputText(''); // Clear the input
+      setStreamedContent(''); // Reset the streamed content
     } catch (error) {
       console.error('Problem with fetch operation:', error);
     }
   };
+
+  useEffect(() => {
+    const eventSource = new EventSource(`${apiUrl}/stream`);
+    eventSource.onmessage = (event) => {
+      const decodedChunk = decoder.decode(event.data);
+      handleStreamedData(decodedChunk);
+    };
+
+    eventSource.onerror = (event) => {
+      console.error('EventSource failed:', event);
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [apiUrl]);
+
+  return { inputText, setInputText, streamedContent, handleSubmit };
+};
+
+function App() {
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+  const { inputText, setInputText, streamedContent, handleSubmit } = useChat(apiUrl);
 
   return (
     <div className="App">
@@ -91,7 +77,7 @@ function App() {
       <input 
         type="text" 
         value={inputText} 
-        onChange={handleInputChange}
+        onChange={(e) => setInputText(e.target.value)}
       />
       <button onClick={handleSubmit}>
         Send
