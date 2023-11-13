@@ -29,10 +29,11 @@ function parseStreamedData(dataString) {
       // Try to parse the accumulated data
       try {
         const parsedJson = JSON.parse(jsonDataAccumulator);
+        // If parse is successful, reset the accumulator and add parsed JSON to parsedData
+        jsonDataAccumulator = '';
         parsedData.push(parsedJson);
-        jsonDataAccumulator = ''; // Reset accumulator after successful parse
       } catch {
-        // Do nothing if JSON is incomplete, wait for more chunks
+        // If JSON is incomplete, wait for more data (do not reset jsonDataAccumulator)
       }
     });
 
