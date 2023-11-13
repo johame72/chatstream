@@ -44,7 +44,7 @@ function parseStreamedData(dataString) {
 }
 
   useEffect(() => {
-    const eventSource = new EventSource('${apiUrl}/stream');
+    const eventSource = new EventSource(`${apiUrl}/stream`);
 
     eventSource.onmessage = function(event) {
       console.log("Raw data:", event.data); // Add this line
@@ -74,7 +74,7 @@ function parseStreamedData(dataString) {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch('${apiUrl}/send', {
+      const response = await fetch(`${apiUrl}/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
