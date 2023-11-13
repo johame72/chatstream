@@ -83,31 +83,31 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Filetree Directory
 
 chatstream
-+--- build
-+--- node_modules
-+--- public
-|   +--- favicon.ico
-|   +--- index.html
-|   +--- manifest.json
-|   +--- robots.txt
-+--- server
-|   +--- node_modules
-|   +--- .env
-|   +--- index.js
-|   +--- package-lock.json
-|   +--- package.json
-+--- src
-|   +--- .env
-|   +--- App.css
-|   +--- App.js
-|   +--- App.test.js
-|   +--- FormattedText.js
-|   +--- index.css
-|   +--- index.js
-|   +--- logo.svg
-|   +--- setupTests.js
-+--- .gitignore
-+--- package-lock.json
-+--- package.json
-+--- Procfile
++--- build  
++--- node_modules  
++--- public  
+|   +--- favicon.ico 
+|   +--- index.html  
+|   +--- manifest.json  
+|   +--- robots.txt  
++--- server 
+|   +--- node_modules  
+|   +--- .env  
+|   +--- index.js  
+|   +--- package-lock.json  
+|   +--- package.json  
++--- src  
+|   +--- .env  
+|   +--- App.css  
+|   +--- App.js  
+|   +--- App.test.js  
+|   +--- FormattedText.js  
+|   +--- index.css  
+|   +--- index.js  
+|   +--- logo.svg  
+|   +--- setupTests.js  
++--- .gitignore  
++--- package-lock.json  
++--- package.json  
++--- Procfile  
 
