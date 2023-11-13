@@ -20,7 +20,7 @@ app.post('/send', async (req, res) => {
   try {
     const userMessage = req.body.message;
     const systemMessage = 'You are a helpful assistant.';
-    const uid = 'user-id-placeholder'; 
+    const uid = 'user-id-placeholder';
 
     const payload = {
       temperature: 0.85,
@@ -55,6 +55,7 @@ app.post('/send', async (req, res) => {
     responseStream.data.on('end', () => {
       if (eventStreamResponse && !eventStreamResponse.finished) {
         eventStreamResponse.write('data: [DONE]\n\n');
+        eventStreamResponse = null; // Reset eventStreamResponse
       }
     });
 
@@ -62,6 +63,7 @@ app.post('/send', async (req, res) => {
       console.error('Stream error:', error);
       if (eventStreamResponse && !eventStreamResponse.finished) {
         eventStreamResponse.write('data: [ERROR]\n\n');
+        eventStreamResponse = null; // Reset eventStreamResponse
       }
     });
 
@@ -78,7 +80,7 @@ app.get('/stream', (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   eventStreamResponse = res;
   req.on('close', () => {
-    eventStreamResponse = null;
+    eventStreamResponse = null; // Reset eventStreamResponse on close
   });
 });
 
