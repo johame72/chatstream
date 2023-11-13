@@ -79,3 +79,36 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Special thanks to OpenAI for providing the GPT-4 API.
 - Hat tip to anyone whose code was used.
 - Inspiration, etc.
+
+### [Filetree Directory](https://github.com/johame72/FileTree)
+
+```
+chatstream  
++--- build  
++--- node_modules  
++--- public  
+|   +--- favicon.ico  
+|   +--- index.html  
+|   +--- manifest.json  
+|   +--- robots.txt  
++--- server  
+|   +--- node_modules  
+|   +--- .env  
+|   +--- index.js  
+|   +--- package-lock.json  
+|   +--- package.json  
++--- src  
+|   +--- .env  
+|   +--- App.css  
+|   +--- App.js  
+|   +--- App.test.js  
+|   +--- FormattedText.js  
+|   +--- index.css  
+|   +--- index.js  
+|   +--- logo.svg  
+|   +--- setupTests.js  
++--- .gitignore  
++--- package-lock.json  
++--- package.json  
++--- Procfile  
+```
