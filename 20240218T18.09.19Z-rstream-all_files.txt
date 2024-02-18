@@ -1,0 +1,856 @@
+Filename: 20240218T18.09.19Z-rstream
+Generated on: 2024-02-18 12:09:19
+Total Characters: 21142
+
+
+--- \rstream\public\index.html ---
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Web site created using create-react-app"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!--
+      Notice the use of %PUBLIC_URL% in the tags above.
+      It will be replaced with the URL of the `public` folder during the build.
+      Only files inside the `public` folder can be referenced from the HTML.
+
+      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+      work correctly both with client-side routing and a non-root public URL.
+      Learn how to configure a non-root public URL by running `npm run build`.
+    -->
+    <title>React App</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <!--
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
+
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
+
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+  </body>
+</html>
+
+
+
+
+
+--- \rstream\public\robots.txt ---
+
+
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Disallow:
+
+
+
+
+
+--- \rstream\server\index.js ---
+
+
+// server\index.js
+const express = require('express');
+const cors = require('cors');
+const axios = require('axios');
+const path = require('path');
+require('dotenv').config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const port = process.env.PORT || 3001;
+const openaiKey = process.env.OPENAI_API_KEY;
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../build')));
+
+let eventStreamResponse;
+
+app.post('/send', async (req, res) => {
+  try {
+    const userMessage = req.body.message;
+    const systemMessage = 'You are a helpful assistant.';
+    const uid = 'user-id-placeholder'; // Replace with actual user ID if available
+
+    const payload = {
+      temperature: 0.85,
+      max_tokens: 4000,
+      top_p: 1,
+      frequency_penalty: 0,
+      presence_penalty: 0,
+      user: uid,
+      model: 'gpt-4',
+      stream: true,
+      messages: [
+        {
+          role: 'system',
+          content: systemMessage
+        },
+        {
+          role: 'user',
+          content: userMessage
+        }
+      ]
+    };
+
+    const responseStream = await axios.post('https://api.openai.com/v1/chat/completions', payload, {
+      headers: {
+        'Authorization': `Bearer ${openaiKey}`,
+        'Content-Type': 'application/json'
+      },
+      responseType: 'stream',
+      timeout: 0
+    });
+
+    responseStream.data.on('data', (chunk) => {
+      if (eventStreamResponse && !eventStreamResponse.finished) {
+        eventStreamResponse.write(`data: ${chunk.toString()}\n\n`);
+      }
+    });
+
+    responseStream.data.on('end', () => {
+      if (eventStreamResponse && !eventStreamResponse.finished) {
+        eventStreamResponse.write('data: [DONE]\n\n');
+        eventStreamResponse = null; // Reset eventStreamResponse
+      }
+    });
+
+    responseStream.data.on('error', (error) => {
+      console.error('Stream error:', error);
+      if (eventStreamResponse && !eventStreamResponse.finished) {
+        eventStreamResponse.write('data: [ERROR]\n\n');
+        eventStreamResponse = null; // Reset eventStreamResponse
+      }
+    });
+
+    res.status(200).json({ message: 'Stream started' });
+  } catch (error) {
+    console.error('Error calling OpenAI API:', error.response ? error.response.data : error);
+    res.status(500).send('Error processing your request');
+  }
+});
+
+app.get('/stream', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  eventStreamResponse = res;
+  req.on('close', () => {
+    eventStreamResponse = null; // Reset eventStreamResponse on close
+  });
+});
+
+// The "catchall" handler: for any request that doesn't match one above, send back the index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
+});
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
+app.listen(port, () => {
+  console.log(`Server listening at http://localhost:${port}`);
+});
+
+
+
+
+
+--- \rstream\server\nubutbrokenindex.js ---
+
+
+const express = require('express');
+const cors = require('cors');
+const axios = require('axios');
+const path = require('path');
+require('dotenv').config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const port = process.env.PORT || 3001;
+const openaiKey = process.env.OPENAI_API_KEY;
+
+app.use(express.static(path.join(__dirname, '../build')));
+
+let eventStreamResponse;
+
+app.post('/send', async (req, res) => {
+  try {
+    const userMessage = req.body.message;
+    const systemMessage = 'You are a helpful assistant.';
+    const uid = 'user-id-placeholder';
+
+    const payload = {
+      temperature: 0.85,
+      max_tokens: 4000,
+      top_p: 1,
+      frequency_penalty: 0,
+      presence_penalty: 0,
+      user: uid,
+      model: 'gpt-4',
+      stream: true,
+      messages: [
+        { role: 'system', content: systemMessage },
+        { role: 'user', content: userMessage }
+      ]
+    };
+
+    const responseStream = await axios.post('https://api.openai.com/v1/chat/completions', payload, {
+      headers: {
+        'Authorization': `Bearer ${openaiKey}`,
+        'Content-Type': 'application/json'
+      },
+      responseType: 'stream',
+      timeout: 0
+    });
+
+    responseStream.data.on('data', (chunk) => {
+      if (eventStreamResponse && !eventStreamResponse.finished) {
+        eventStreamResponse.write(`data: ${chunk.toString()}\n\n`);
+      }
+    });
+
+    responseStream.data.on('end', () => {
+      if (eventStreamResponse && !eventStreamResponse.finished) {
+        eventStreamResponse.write('data: [DONE]\n\n');
+        eventStreamResponse = null; // Reset eventStreamResponse
+      }
+    });
+
+    responseStream.data.on('error', (error) => {
+      console.error('Stream error:', error);
+      if (eventStreamResponse && !eventStreamResponse.finished) {
+        eventStreamResponse.write('data: [ERROR]\n\n');
+        eventStreamResponse = null; // Reset eventStreamResponse
+      }
+    });
+
+    res.status(200).json({ message: 'Stream started' });
+  } catch (error) {
+    console.error('Error calling OpenAI API:', error.response ? error.response.data : error);
+    res.status(500).send('Error processing your request');
+  }
+});
+
+app.get('/stream', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  eventStreamResponse = res;
+  req.on('close', () => {
+    eventStreamResponse = null; // Reset eventStreamResponse on close
+  });
+});
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
+});
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
+app.listen(port, () => {
+  console.log(`Server listening at http://localhost:${port}`);
+});
+
+
+
+
+
+--- \rstream\server\Old_index.js ---
+
+
+// server\index.js
+const express = require('express');
+const cors = require('cors');
+const axios = require('axios');
+const path = require('path');
+require('dotenv').config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const port = process.env.PORT || 3001;
+const openaiKey = process.env.OPENAI_API_KEY;
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../build')));
+
+let eventStreamResponse;
+
+app.post('/send', async (req, res) => {
+  try {
+    const userMessage = req.body.message;
+    const systemMessage = 'You are a helpful assistant.';
+    const uid = 'user-id-placeholder'; // Replace with actual user ID if available
+
+    const payload = {
+      temperature: 0.85,
+      max_tokens: 4000,
+      top_p: 1,
+      frequency_penalty: 0,
+      presence_penalty: 0,
+      user: uid,
+      model: 'gpt-4',
+      stream: true,
+      messages: [
+        {
+          role: 'system',
+          content: systemMessage
+        },
+        {
+          role: 'user',
+          content: userMessage
+        }
+      ]
+    };
+
+    const responseStream = await axios.post('https://api.openai.com/v1/chat/completions', payload, {
+      headers: {
+        'Authorization': `Bearer ${openaiKey}`,
+        'Content-Type': 'application/json'
+      },
+      responseType: 'stream',
+      timeout: 0
+    });
+
+    responseStream.data.on('data', (chunk) => {
+      if (eventStreamResponse && !eventStreamResponse.finished) {
+        eventStreamResponse.write(`data: ${chunk.toString()}\n\n`);
+      }
+    });
+
+    responseStream.data.on('end', () => {
+      if (eventStreamResponse && !eventStreamResponse.finished) {
+        eventStreamResponse.write('data: [DONE]\n\n');
+      }
+    });
+
+    responseStream.data.on('error', (error) => {
+      console.error('Stream error:', error);
+      if (eventStreamResponse && !eventStreamResponse.finished) {
+        eventStreamResponse.write('data: [ERROR]\n\n');
+      }
+    });
+
+    res.status(200).json({ message: 'Stream started' });
+  } catch (error) {
+    console.error('Error calling OpenAI API:', error.response ? error.response.data : error);
+    res.status(500).send('Error processing your request');
+  }
+});
+
+app.get('/stream', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  eventStreamResponse = res;
+  req.on('close', () => {
+    eventStreamResponse = null;
+  });
+});
+
+// The "catchall" handler: for any request that doesn't match one above, send back the index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
+});
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
+app.listen(port, () => {
+  console.log(`Server listening at http://localhost:${port}`);
+});
+
+
+
+
+
+--- \rstream\src\App.css ---
+
+
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+
+
+
+--- \rstream\src\App.js ---
+
+
+// src\App.js
+import React, { useState, useEffect } from 'react';
+import FormattedText from './FormattedText';
+function App() {
+  const [inputText, setInputText] = useState('');
+  const [streamedContent, setStreamedContent] = useState('');
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+function parseStreamedData(dataString) {
+  try {
+    // Accumulator for JSON data
+    let jsonDataAccumulator = '';
+    const lines = dataString.split('\n');
+    const parsedData = [];
+    lines.forEach(line => {
+      // Remove 'data: ' prefix and trim
+      line = line.replace(/^data: /, '').trim();
+      // Check if line indicates end of data stream
+      if (line === '[DONE]') {
+        return;
+      }
+      // Accumulate JSON data
+      jsonDataAccumulator += line;
+      // Try to parse the accumulated data
+      try {
+        const parsedJson = JSON.parse(jsonDataAccumulator);
+        // If parse is successful, reset the accumulator and add parsed JSON to parsedData
+        jsonDataAccumulator = '';
+        parsedData.push(parsedJson);
+      } catch {
+        // If JSON is incomplete, wait for more data (do not reset jsonDataAccumulator)
+      }
+    });
+    return parsedData;
+  } catch (error) {
+    console.error('Error parsing chunk:', error);
+    return [];
+  }
+}
+  useEffect(() => {
+    const eventSource = new EventSource(`${apiUrl}/stream`);
+    eventSource.onmessage = function(event) {
+      console.log("Raw data:", event.data); // Add this line
+      const parsedChunks = parseStreamedData(event.data);
+      parsedChunks.forEach(chunk => {
+        if (chunk.choices && chunk.choices.length > 0) {
+          const content = chunk.choices[0].delta.content;
+          if (content) {
+            setStreamedContent(currentContent => currentContent + content);
+          }
+        }
+      });
+    };
+    eventSource.onerror = function(event) {
+      console.error('EventSource failed:', event);
+    };
+    return () => {
+      eventSource.close();
+    };
+  }, [apiUrl]);
+  const handleInputChange = (e) => {
+    setInputText(e.target.value);
+  };
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: inputText }),
+      });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      setStreamedContent(''); // Reset the streamed content
+      setInputText(''); // Clear the input
+    } catch (error) {
+      console.error('There has been a problem with your fetch operation:', error);
+    }
+  };
+  return (
+    <div className="App">
+      <h1>Real-time Streaming with OpenAI and SSE</h1>
+      <input 
+        type="text" 
+        value={inputText} 
+        onChange={handleInputChange}
+      />
+      <button onClick={handleSubmit}>
+        Send
+      </button>
+      <div>
+        <h2>Streamed Responses:</h2>
+        <FormattedText text={streamedContent} />
+      </div>
+    </div>
+  );
+}
+export default App;
+
+
+
+
+
+--- \rstream\src\App.test.js ---
+
+
+import { render, screen } from '@testing-library/react';
+import App from './App';
+
+test('renders learn react link', () => {
+  render(<App />);
+  const linkElement = screen.getByText(/learn react/i);
+  expect(linkElement).toBeInTheDocument();
+});
+
+
+
+
+
+--- \rstream\src\FormattedText.js ---
+
+
+// src\FormattedText.js
+import React from 'react';
+import { marked } from 'marked';
+
+function FormattedText({ text }) {
+  const getMarkdownText = () => {
+    var rawMarkup = marked(text, { sanitize: true });
+    return { __html: rawMarkup };
+  };
+
+  return <div dangerouslySetInnerHTML={getMarkdownText()} />;
+}
+
+export default FormattedText;
+
+
+
+
+
+--- \rstream\src\index.css ---
+
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+
+
+
+
+--- \rstream\src\index.js ---
+
+
+// src\index.js
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import './index.css';
+import App from './App';
+import reportWebVitals from './reportWebVitals';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+reportWebVitals();
+
+
+
+
+
+--- \rstream\src\NuApp_function.js ---
+
+
+function parseStreamedData(dataString) {
+    try {
+      // Initialize an accumulator for JSON data
+      let jsonDataAccumulator = '';
+      const lines = dataString.split('\n');
+      const parsedData = [];
+
+      lines.forEach(line => {
+        // Remove 'data: ' prefix and trim
+        line = line.replace(/^data: /, '').trim();
+
+        if (line === '[DONE]') {
+          // End of data stream
+          return;
+        }
+
+        jsonDataAccumulator += line;
+
+        try {
+          const parsedJson = JSON.parse(jsonDataAccumulator);
+          // If parse is successful, reset the accumulator and store the parsed data
+          jsonDataAccumulator = '';
+          parsedData.push(parsedJson);
+        } catch {
+          // If JSON is incomplete, wait for more data
+        }
+      });
+
+      return parsedData;
+    } catch (error) {
+      console.error('Error parsing chunk:', error);
+      return [];
+    }
+  }
+
+
+
+
+--- \rstream\src\Old_App.js ---
+
+
+// src\App.js
+import React, { useState, useEffect } from 'react';
+import FormattedText from './FormattedText';
+function App() {
+  const [inputText, setInputText] = useState('');
+  const [streamedContent, setStreamedContent] = useState('');
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+function parseStreamedData(dataString) {
+  try {
+    // Accumulator for JSON data
+    let jsonDataAccumulator = '';
+    const lines = dataString.split('\n');
+    const parsedData = [];
+    lines.forEach(line => {
+      // Remove 'data: ' prefix and trim
+      line = line.replace(/^data: /, '').trim();
+      // Check if line indicates end of data stream
+      if (line === '[DONE]') {
+        return;
+      }
+      // Accumulate JSON data
+      jsonDataAccumulator += line;
+      // Try to parse the accumulated data
+      try {
+        const parsedJson = JSON.parse(jsonDataAccumulator);
+        // If parse is successful, reset the accumulator and add parsed JSON to parsedData
+        jsonDataAccumulator = '';
+        parsedData.push(parsedJson);
+      } catch {
+        // If JSON is incomplete, wait for more data (do not reset jsonDataAccumulator)
+      }
+    });
+    return parsedData;
+  } catch (error) {
+    console.error('Error parsing chunk:', error);
+    return [];
+  }
+}
+  useEffect(() => {
+    const eventSource = new EventSource(`${apiUrl}/stream`);
+    eventSource.onmessage = function(event) {
+      console.log("Raw data:", event.data); // Add this line
+      const parsedChunks = parseStreamedData(event.data);
+      parsedChunks.forEach(chunk => {
+        if (chunk.choices && chunk.choices.length > 0) {
+          const content = chunk.choices[0].delta.content;
+          if (content) {
+            setStreamedContent(currentContent => currentContent + content);
+          }
+        }
+      });
+    };
+    eventSource.onerror = function(event) {
+      console.error('EventSource failed:', event);
+    };
+    return () => {
+      eventSource.close();
+    };
+  }, [apiUrl]);
+  const handleInputChange = (e) => {
+    setInputText(e.target.value);
+  };
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: inputText }),
+      });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      setStreamedContent(''); // Reset the streamed content
+      setInputText(''); // Clear the input
+    } catch (error) {
+      console.error('There has been a problem with your fetch operation:', error);
+    }
+  };
+  return (
+    <div className="App">
+      <h1>Real-time Streaming with OpenAI and SSE</h1>
+      <input 
+        type="text" 
+        value={inputText} 
+        onChange={handleInputChange}
+      />
+      <button onClick={handleSubmit}>
+        Send
+      </button>
+      <div>
+        <h2>Streamed Responses:</h2>
+        <FormattedText text={streamedContent} />
+      </div>
+    </div>
+  );
+}
+export default App;
+
+
+
+
+
+--- \rstream\src\reportWebVitals.js ---
+
+
+const reportWebVitals = onPerfEntry => {
+  if (onPerfEntry && onPerfEntry instanceof Function) {
+    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
+      getCLS(onPerfEntry);
+      getFID(onPerfEntry);
+      getFCP(onPerfEntry);
+      getLCP(onPerfEntry);
+      getTTFB(onPerfEntry);
+    });
+  }
+};
+
+export default reportWebVitals;
+
+
+
+
+
+--- \rstream\src\setupTests.js ---
+
+
+// jest-dom adds custom jest matchers for asserting on DOM nodes.
+// allows you to do things like:
+// expect(element).toHaveTextContent(/react/i)
+// learn more: https://github.com/testing-library/jest-dom
+import '@testing-library/jest-dom';
+
+
+
+
+
+--- \rstream\20240218T120908_tree.txt ---
+
+
+rstream
++--- build
++--- node_modules
++--- public
+|   +--- favicon.ico
+|   +--- index.html
+|   +--- manifest.json
+|   +--- robots.txt
++--- server
+|   +--- node_modules
+|   +--- .env
+|   +--- index.js
+|   +--- Old_index.js
+|   +--- package-lock.json
+|   +--- package.json
++--- src
+|   +--- .env
+|   +--- App.css
+|   +--- App.js
+|   +--- App.test.js
+|   +--- FormattedText.js
+|   +--- index.css
+|   +--- index.js
+|   +--- logo.svg
+|   +--- Old_App.js
+|   +--- setupTests.js
++--- .gitignore
++--- 20240218T18.08.57Z-rstream-all_files.txt
++--- package-lock.json
++--- package.json
++--- Procfile
+
+
+
+
